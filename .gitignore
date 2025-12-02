@@ -18,4 +18,5 @@ Thumbs.db
 
 # IDE Files
 .vscode/
-.idea/
+.idea/backend/feedback_local.json
+backend/feedback_dataset.json
