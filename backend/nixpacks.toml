@@ -7,8 +7,5 @@ cmds = [
     "python3.11 -m pip install -r requirements.txt"
 ]
 
-[phases.build]
-cmds = ["echo 'Python build complete'"]
-
 [start]
 cmd = "bash start.sh"
