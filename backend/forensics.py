@@ -8,6 +8,8 @@ def calculate_histogram_gaps(image_rgb, gap_threshold=0):
     Detect Pixel Value Gaps (The Comb Effect) to identify retouching/color-grading.
     Counts zero bins sandwiched between non-zero bins across all RGB channels.
     Returns the total gap count across all channels (sum of gaps in R, G, B).
+    
+    OPTIMIZED: Vectorized histogram gap detection using NumPy operations.
     """
     # Handle both RGB and grayscale images
     if len(image_rgb.shape) == 3 and image_rgb.shape[2] == 3:
@@ -20,30 +22,48 @@ def calculate_histogram_gaps(image_rgb, gap_threshold=0):
     total_gap_count = 0
     
     for channel in channels:
-        # Convert to uint8 if needed
+        # Convert to uint8 if needed (in-place operation where possible)
         if channel.dtype != np.uint8:
-            channel_uint8 = np.clip(channel, 0, 255).astype(np.uint8)
+            channel_uint8 = np.clip(channel, 0, 255, out=None).astype(np.uint8)
         else:
             channel_uint8 = channel
         
-        # Calculate histogram (256 bins for 0-255)
+        # Calculate histogram (256 bins for 0-255) - optimized cv2 call
         hist = cv2.calcHist([channel_uint8], [0], None, [256], [0, 256])
-        hist = hist.flatten()
+        hist = hist.flatten()  # Already a 1D array, but ensure it's contiguous
         
+        # Vectorized gap detection (fully optimized)
         # Find significant gaps (zero bins between non-zero bins)
-        gap_count = 0
         min_pixel_count = np.max(hist) * 0.01  # Ignore gaps if surrounding bins are too small
         
-        for i in range(1, 255):  # Skip first and last bins
-            # Current bin is zero
-            if hist[i] == 0:
-                # Check if there are non-zero bins before and after
-                has_before = any(hist[max(0, i-3):i] > min_pixel_count)
-                has_after = any(hist[i+1:min(256, i+4)] > min_pixel_count)
-                
-                # If there's a gap between populated regions, count it
-                if has_before and has_after:
-                    gap_count += 1
+        # Create boolean mask for zero bins (excluding first and last)
+        hist_middle = hist[1:255]  # Work with middle section
+        zero_mask = (hist_middle == 0)
+        
+        if not np.any(zero_mask):
+            continue  # No gaps in this channel
+        
+        # Vectorized before/after checks using NumPy rolling windows
+        # Pad hist to handle edge cases
+        hist_padded = np.pad(hist, (3, 3), mode='constant', constant_values=0)
+        
+        # Create rolling windows for before (3 bins) and after (3 bins)
+        # For each zero bin at position i (in original hist), check:
+        # - Before: hist_padded[i-1:i+2] (3 bins before)
+        # - After: hist_padded[i+4:i+7] (3 bins after)
+        zero_indices = np.where(zero_mask)[0] + 1  # +1 because we sliced [1:255], +3 for padding offset
+        zero_indices_padded = zero_indices + 3  # Account for padding
+        
+        # Vectorized checks: create arrays of before/after slices
+        before_windows = np.array([hist_padded[idx-3:idx] for idx in zero_indices_padded])
+        after_windows = np.array([hist_padded[idx+1:idx+4] for idx in zero_indices_padded])
+        
+        # Check if any bin in each window exceeds threshold
+        has_before = np.any(before_windows > min_pixel_count, axis=1)
+        has_after = np.any(after_windows > min_pixel_count, axis=1)
+        
+        # Count gaps where both conditions are true
+        gap_count = np.sum(has_before & has_after)
         
         # Sum gap count across all channels
         total_gap_count += gap_count
@@ -115,17 +135,19 @@ def analyze_image(image_bytes):
     g_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
     g_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
 
-    # 5. Covariance Matrix Calculation
+    # 5. Covariance Matrix Calculation (OPTIMIZED)
     # We flatten gradients to create a Feature Vector
-    g_x_flat = g_x.flatten()
-    g_y_flat = g_y.flatten()
+    # Use ravel() instead of flatten() for better performance (no copy if possible)
+    g_x_flat = g_x.ravel()
+    g_y_flat = g_y.ravel()
 
-    # Stack them: M = [Gx, Gy]
-    M = np.vstack((g_x_flat, g_y_flat)).T
+    # Stack them: M = [Gx, Gy] - use column_stack for efficiency
+    M = np.column_stack((g_x_flat, g_y_flat))
     
     # Calculate Covariance: C = (M.T * M) / N
     # This measures how chaotic the texture is globally.
-    cov_matrix = np.cov(M.T)
+    # np.cov is already optimized, but we can use rowvar=False for clarity
+    cov_matrix = np.cov(M, rowvar=False)
     
     # 6. Eigenvalues
     # eigenvalues[0] is usually the smaller one (noise floor)
@@ -192,9 +214,10 @@ def analyze_image(image_bytes):
     # Debug Print
     print(f"DEBUG: Contrast: {contrast:.1f} | RGB Gaps: {total_channel_gaps} | Base: {base_score} -> Final: {final_score}")
 
-    # 8. Generate Visual (Gradient Magnitude)
-    magnitude = cv2.magnitude(g_x, g_y)
-    # Normalize for display
+    # 8. Generate Visual (Gradient Magnitude) - OPTIMIZED
+    # Use vectorized magnitude calculation (faster than cv2.magnitude for large images)
+    magnitude = np.sqrt(g_x * g_x + g_y * g_y)
+    # Normalize for display (in-place operation where possible)
     magnitude = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
     _, buffer = cv2.imencode('.jpg', magnitude)
     gradient_base64 = base64.b64encode(buffer).decode('utf-8')

@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
+from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel
 from typing import Optional, Dict, Tuple
 import os
@@ -18,10 +19,12 @@ load_dotenv()
 # Configure FastAPI for Vercel deployment
 # When deployed on Vercel, routes are accessed via /api/* prefix
 # For local development, routes work without prefix
+# Using ORJSONResponse for faster JSON serialization (2-3x faster than standard json)
 app = FastAPI(
     title="RealorAI Backend",
     description="AI Image Detector API",
-    version="1.0.0"
+    version="1.0.0",
+    default_response_class=ORJSONResponse
 )
 
 # 1. CORS Setup (Critical for frontend connection)
@@ -84,14 +87,26 @@ def classify_trust_score(score: int) -> str:
 
 
 # 4. The Critical Analysis Endpoint (RESTORED)
+# NOTE: Using async def but running CPU-heavy analyze_image() in thread pool
+# This prevents blocking the event loop while still allowing async file I/O
 @app.post("/analyze")
 async def upload_analyze(file: UploadFile = File(...)):
     try:
-        # Read file into memory
+        # Read file into memory (async I/O - fast, non-blocking)
         contents = await file.read()
         
-        # Pass to forensics engine
-        result = analyze_image(contents)
+        # Run CPU-heavy analysis in thread pool to avoid blocking event loop
+        import asyncio
+        import concurrent.futures
+        
+        # Use asyncio.to_thread (Python 3.9+) or run_in_executor for older versions
+        try:
+            result = await asyncio.to_thread(analyze_image, contents)
+        except AttributeError:
+            # Fallback for Python < 3.9
+            loop = asyncio.get_event_loop()
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                result = await loop.run_in_executor(executor, analyze_image, contents)
         
         # Get trust_score from analysis
         trust_score = result.get("trust_score", 0)
@@ -99,7 +114,7 @@ async def upload_analyze(file: UploadFile = File(...)):
         # Classify the score
         classification = classify_trust_score(trust_score)
         
-        # Return JSON to frontend
+        # Return JSON to frontend (ORJSONResponse handles serialization)
         return {
             "filename": file.filename or "image.jpg",
             "trust_score": trust_score,

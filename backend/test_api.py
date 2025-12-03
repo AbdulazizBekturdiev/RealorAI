@@ -23,10 +23,11 @@ def test_analyze(image_path: str):
             data = response.json()
             print("\n✅ Success!")
             print(f"  Filename: {data.get('filename')}")
-            print(f"  Trust Score: {data.get('trust_score')}")
+            print(f"  Trust Score: {data.get('trust_score')}%")
             print(f"  Classification: {data.get('classification')}")
-            print(f"  Group: {data.get('group')}")
             print(f"  Has gradient_image: {bool(data.get('gradient_image'))}")
+            if 'meta' in data:
+                print(f"  Eigenvalues: {data['meta'].get('eigenvalues', 'N/A')}")
         else:
             print(f"\n❌ Error: {response.json()}")
             
