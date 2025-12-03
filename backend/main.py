@@ -108,6 +108,7 @@ async def submit_feedback(feedback: FeedbackSchema):
                 supabase: Client = create_client(supabase_url, supabase_key)
                 
                 # Insert into Supabase
+                # Note: Supabase table doesn't have 'timestamp' column - it auto-generates timestamps
                 supabase.table("feedback").insert({
                     "filename": feedback.filename,
                     "ai_score": feedback.ai_score,
@@ -115,7 +116,7 @@ async def submit_feedback(feedback: FeedbackSchema):
                     "actual_category": feedback.actual_category,
                     "comments": feedback.comments,
                     "contribute_data": feedback.contribute_data,
-                    "timestamp": feedback.timestamp,
+                    # timestamp is not included - Supabase auto-generates it
                 }).execute()
                 
                 return {"status": "success", "mode": "database"}

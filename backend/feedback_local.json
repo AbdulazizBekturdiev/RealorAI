@@ -124,5 +124,59 @@
     "comments": "Test 4",
     "contribute_data": true,
     "timestamp": "2025-12-03T05:52:11.533Z"
+  },
+  {
+    "filename": "3. Hot Air Balloon Flights - Hero Balloon Flights Dubai (7) (1).jpg",
+    "ai_score": 28,
+    "user_verdict": "correct",
+    "actual_category": null,
+    "comments": "Test 5",
+    "contribute_data": true,
+    "timestamp": "2025-12-03T06:12:16.163Z"
+  },
+  {
+    "filename": "3. Hot Air Balloon Flights - Hero Balloon Flights Dubai (7) (1).jpg",
+    "ai_score": 28,
+    "user_verdict": "correct",
+    "actual_category": null,
+    "comments": "Test 5",
+    "contribute_data": true,
+    "timestamp": "2025-12-03T06:14:46.109Z"
+  },
+  {
+    "filename": "3. Hot Air Balloon Flights - Hero Balloon Flights Dubai (7) (1).jpg",
+    "ai_score": 28,
+    "user_verdict": "correct",
+    "actual_category": null,
+    "comments": "Test 6",
+    "contribute_data": true,
+    "timestamp": "2025-12-03T06:22:10.585Z"
+  },
+  {
+    "filename": "1763959023498.jpeg",
+    "ai_score": 45,
+    "user_verdict": "correct",
+    "actual_category": null,
+    "comments": "Test 7",
+    "contribute_data": true,
+    "timestamp": "2025-12-03T06:31:34.829Z"
+  },
+  {
+    "filename": "test.jpg",
+    "ai_score": 75,
+    "user_verdict": "correct",
+    "actual_category": null,
+    "comments": "Test feedback submission",
+    "contribute_data": true,
+    "timestamp": "2025-12-03T10:00:00.000Z"
+  },
+  {
+    "filename": "test2.jpg",
+    "ai_score": 80,
+    "user_verdict": "incorrect",
+    "actual_category": "ai",
+    "comments": "Testing Supabase save",
+    "contribute_data": false,
+    "timestamp": "2025-12-03T10:05:00.000Z"
   }
 ]
