@@ -15,7 +15,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI()
+# Configure FastAPI for Vercel deployment
+# When deployed on Vercel, routes are accessed via /api/* prefix
+# For local development, routes work without prefix
+app = FastAPI(
+    title="RealorAI Backend",
+    description="AI Image Detector API",
+    version="1.0.0"
+)
 
 # 1. CORS Setup (Critical for frontend connection)
 app.add_middleware(
