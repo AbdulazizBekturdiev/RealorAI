@@ -265,7 +265,12 @@ async def download_admin_data(key: str = ""):
         return {"error": f"Failed to generate CSV: {str(e)}"}
 
 
-# Health check
+# Health check endpoints
 @app.get("/")
 def home():
-    return {"status": "Backend is running"}
+    return {"status": "Backend is running", "port": os.environ.get("PORT", "not set")}
+
+@app.get("/health")
+def health():
+    """Health check endpoint for Railway"""
+    return {"status": "healthy", "service": "RealorAI Backend"}
