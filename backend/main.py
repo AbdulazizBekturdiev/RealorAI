@@ -6,8 +6,8 @@ from typing import Optional, Dict, Tuple
 import os
 import json
 import io
+import csv
 import logging
-import pandas as pd
 
 # Logic Imports
 from forensics import analyze_image
@@ -228,22 +228,25 @@ async def download_admin_data(key: str = ""):
         return {"error": "No data to download"}
     
     try:
-        # Convert to DataFrame
-        df = pd.DataFrame(feedbacks)
+        # Convert to CSV using built-in csv library (no pandas needed)
+        output = io.StringIO()
+        if len(feedbacks) > 0:
+            # Get headers from first row
+            headers = list(feedbacks[0].keys())
+            writer = csv.DictWriter(output, fieldnames=headers)
+            writer.writeheader()
+            writer.writerows(feedbacks)
         
-        # Convert to CSV string
-        stream = io.StringIO()
-        df.to_csv(stream, index=False)
+        output.seek(0)
         
         # Return as file download
-        response = StreamingResponse(
-            iter([stream.getvalue()]),
-            media_type="text/csv"
+        return StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=feedback_data.csv"}
         )
-        response.headers["Content-Disposition"] = "attachment; filename=feedback_data.csv"
-        
-        return response
     except Exception as e:
+        logging.error(f"CSV generation failed: {str(e)}")
         return {"error": f"Failed to generate CSV: {str(e)}"}
 
 
