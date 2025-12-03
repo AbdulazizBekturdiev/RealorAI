@@ -8,4 +8,4 @@ cmds = [
 ]
 
 [start]
-cmd = "bash start.sh"
+cmd = "bash -c 'export PATH=\"/nix/store\"*\"\/bin:$PATH\" && bash start.sh'"
