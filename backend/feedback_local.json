@@ -1,0 +1,128 @@
+[
+  {
+    "filename": "Gemini_Generated_Image_wbeqeqwbeqeqwbeq (1).png",
+    "ai_score": 100,
+    "user_verdict": "correct",
+    "actual_category": null,
+    "comments": "This is a test",
+    "contribute_data": true,
+    "timestamp": "2025-12-02T13:46:56.263Z"
+  },
+  {
+    "filename": "4. Inflight Falconry Experience - Hero Balloon Flights Dubai (5).png",
+    "ai_score": 45,
+    "user_verdict": "incorrect",
+    "actual_category": "ai",
+    "comments": "Not that good",
+    "contribute_data": true,
+    "timestamp": "2025-12-02T13:51:13.115Z"
+  },
+  {
+    "filename": "3. Hot Air Balloon Flights - Hero Balloon Flights Dubai (7) (1).jpg",
+    "ai_score": 28,
+    "user_verdict": "incorrect",
+    "actual_category": "edited",
+    "comments": "Not done",
+    "contribute_data": true,
+    "timestamp": "2025-12-02T13:55:10.422Z"
+  },
+  {
+    "filename": "3. Hot Air Balloon Flights - Hero Balloon Flights Dubai (7) (1).jpg",
+    "ai_score": 28,
+    "user_verdict": "correct",
+    "actual_category": null,
+    "comments": "Test 3",
+    "contribute_data": true,
+    "timestamp": "2025-12-02T13:58:18.534Z"
+  },
+  {
+    "filename": "Gemini_Generated_Image_s3197us3197us319.png",
+    "ai_score": 96,
+    "user_verdict": "incorrect",
+    "actual_category": "edited",
+    "comments": "This photo is edited with AI, so hardly possible that it would be 96%.",
+    "contribute_data": true,
+    "timestamp": "2025-12-02T17:11:38.621Z"
+  },
+  {
+    "filename": "3. Hot Air Balloon Flights - Hero Balloon Flights Dubai (7) (1).jpg",
+    "ai_score": 28,
+    "user_verdict": "incorrect",
+    "actual_category": "edited",
+    "comments": "These photos are real but edited, not AI",
+    "contribute_data": true,
+    "timestamp": "2025-12-02T18:28:01.018Z"
+  },
+  {
+    "filename": "Vintage Land Rover - Platinum Heritage (226).jpg",
+    "ai_score": 56,
+    "user_verdict": "correct",
+    "actual_category": null,
+    "comments": "Seems correct",
+    "contribute_data": true,
+    "timestamp": "2025-12-02T18:48:21.586Z"
+  },
+  {
+    "filename": "Gemini_Generated_Image_4d52854d52854d52.png",
+    "ai_score": 25,
+    "user_verdict": "correct",
+    "actual_category": null,
+    "comments": "Test is done",
+    "contribute_data": true,
+    "timestamp": "2025-12-03T04:46:45.883Z"
+  },
+  {
+    "filename": "Gemini_Generated_Image_s3197us3197us319.png",
+    "ai_score": 96,
+    "user_verdict": "correct",
+    "actual_category": null,
+    "comments": "Test 100",
+    "contribute_data": true,
+    "timestamp": "2025-12-03T04:47:26.928Z"
+  },
+  {
+    "filename": "3. Hot Air Balloon Flights - Hero Balloon Flights Dubai (6) (1).jpg",
+    "ai_score": 14,
+    "user_verdict": "correct",
+    "actual_category": null,
+    "comments": "Test 1",
+    "contribute_data": true,
+    "timestamp": "2025-12-03T04:55:23.892Z"
+  },
+  {
+    "filename": "3. Hot Air Balloon Flights - Hero Balloon Flights Dubai (6) (1).jpg",
+    "ai_score": 14,
+    "user_verdict": "incorrect",
+    "actual_category": "edited",
+    "comments": "Real but edited",
+    "contribute_data": true,
+    "timestamp": "2025-12-03T04:57:10.544Z"
+  },
+  {
+    "filename": "3. Hot Air Balloon Flights - Hero Balloon Flights Dubai (7) (1).jpg",
+    "ai_score": 28,
+    "user_verdict": "correct",
+    "actual_category": null,
+    "comments": "Test 2",
+    "contribute_data": true,
+    "timestamp": "2025-12-03T05:07:26.214Z"
+  },
+  {
+    "filename": "3. Hot Air Balloon Flights - Hero Balloon Flights Dubai (3) (1).jpg",
+    "ai_score": 64,
+    "user_verdict": "correct",
+    "actual_category": null,
+    "comments": "Test 3\n",
+    "contribute_data": true,
+    "timestamp": "2025-12-03T05:28:46.626Z"
+  },
+  {
+    "filename": "tourists-take-boat-ban-rak-thai-village-mae-hong-son-province-thailand.jpg",
+    "ai_score": 100,
+    "user_verdict": "correct",
+    "actual_category": null,
+    "comments": "Test 4",
+    "contribute_data": true,
+    "timestamp": "2025-12-03T05:52:11.533Z"
+  }
+]
