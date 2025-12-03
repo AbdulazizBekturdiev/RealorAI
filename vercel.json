@@ -1,0 +1,12 @@
+{
+    "rewrites": [
+      { "source": "/api/(.*)", "destination": "/backend/main.py" },
+      { "source": "/(.*)", "destination": "/index.html" }
+    ],
+    "functions": {
+      "backend/main.py": {
+        "maxDuration": 60,
+        "includeFiles": "backend/**"
+      }
+    }
+  }
