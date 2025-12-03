@@ -8,7 +8,11 @@ import json
 import os
 import io
 import pandas as pd
+from dotenv import load_dotenv
 from forensics import analyze_image
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = FastAPI()
 
@@ -154,13 +158,41 @@ async def submit_feedback(feedback: FeedbackSchema):
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
+def get_supabase_client():
+    """Get Supabase client if credentials are available."""
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_KEY")
+    
+    if not supabase_url or not supabase_key:
+        return None
+    
+    try:
+        from supabase import create_client, Client
+        return create_client(supabase_url, supabase_key)
+    except ImportError:
+        return None
+    except Exception as e:
+        print(f"Error creating Supabase client: {e}")
+        return None
+
 @app.get("/admin/view")
 async def view_feedback():
     """
     View all collected feedback data.
-    Returns JSON list of all feedback entries.
+    Returns JSON list of all feedback entries from Supabase or local file.
     """
-    feedback_file = "feedback_dataset.json"
+    # Try Supabase first
+    supabase = get_supabase_client()
+    if supabase:
+        try:
+            response = supabase.table("feedback").select("*").execute()
+            feedbacks = response.data if response.data else []
+            return {"count": len(feedbacks), "data": feedbacks}
+        except Exception as e:
+            print(f"Supabase error: {e}, falling back to local file")
+    
+    # Fallback to local JSON file
+    feedback_file = "feedback_local.json"
     
     if not os.path.exists(feedback_file):
         return {"count": 0, "data": [], "message": "No data yet"}
@@ -189,20 +221,38 @@ async def download_feedback(key: str = ""):
     if key != "admin123":
         return {"error": "Unauthorized. Use ?key=admin123"}
     
-    feedback_file = "feedback_dataset.json"
+    feedbacks = []
     
-    if not os.path.exists(feedback_file):
+    # Try Supabase first
+    supabase = get_supabase_client()
+    if supabase:
+        try:
+            response = supabase.table("feedback").select("*").execute()
+            feedbacks = response.data if response.data else []
+        except Exception as e:
+            print(f"Supabase error: {e}, falling back to local file")
+    
+    # Fallback to local JSON file if Supabase failed or not configured
+    if not feedbacks:
+        feedback_file = "feedback_local.json"
+        
+        if not os.path.exists(feedback_file):
+            return {"error": "No data to download"}
+        
+        try:
+            with open(feedback_file, "r") as f:
+                feedbacks = json.load(f)
+            
+            # Ensure it's a list
+            if not isinstance(feedbacks, list):
+                feedbacks = [feedbacks]
+        except Exception as e:
+            return {"error": f"Failed to read local file: {str(e)}"}
+    
+    if not feedbacks:
         return {"error": "No data to download"}
     
     try:
-        # Read JSON file
-        with open(feedback_file, "r") as f:
-            feedbacks = json.load(f)
-        
-        # Ensure it's a list
-        if not isinstance(feedbacks, list):
-            feedbacks = [feedbacks]
-        
         # Convert to DataFrame
         df = pd.DataFrame(feedbacks)
         
