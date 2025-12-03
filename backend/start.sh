@@ -4,31 +4,35 @@ set -euo pipefail
 echo "=== Starting RealorAI Backend ==="
 echo "PORT: ${PORT:-8000}"
 
-# Attempt to source Nix environment
-if [ -e /etc/profile.d/nix.sh ]; then
-  . /etc/profile.d/nix.sh
-fi
-
-# Candidates to check for a python executable
-declare -a candidates
-candidates+=("$(command -v python3.11 2>/dev/null || true)")
-candidates+=("$(command -v python3 2>/dev/null || true)")
-candidates+=("$(command -v python 2>/dev/null || true)")
-candidates+=("$(find /nix/store -name python3.11 -type f -executable 2>/dev/null | head -n 1 || true)")
+# Try to find Python in /nix/store explicitly
+# Railway Nixpacks installs Python in a path like:
+# /nix/store/<hash>-python3-3.11.x/bin/python3.11
+CANDIDATES=$(find /nix/store -name python3.11 -type f 2>/dev/null)
 
 PYTHON=""
-for candidate in "${candidates[@]}"; do
-  if [ -n "$candidate" ] && [ -x "$candidate" ]; then
-    PYTHON="$candidate"
+for c in $CANDIDATES; do
+  if [[ "$c" == */bin/python3.11 ]]; then
+    PYTHON="$c"
     break
   fi
 done
 
+# If still empty, try PATH based lookups
 if [ -z "$PYTHON" ]; then
-  echo "ERROR: Python not found"
-  echo "PATH: $PATH"
-  echo "Listing /nix/store (partial):"
-  ls -d /nix/store/*python* 2>/dev/null | head -n 5 || echo "No python in /nix/store"
+  if command -v python3.11 &> /dev/null; then
+    PYTHON=$(command -v python3.11)
+  elif command -v python3 &> /dev/null; then
+    PYTHON=$(command -v python3)
+  elif command -v python &> /dev/null; then
+    PYTHON=$(command -v python)
+  fi
+fi
+
+if [ -z "$PYTHON" ]; then
+  echo "ERROR: Python not found in /nix/store or PATH."
+  echo "PATH is: $PATH"
+  echo "Listing /nix/store (limited):"
+  ls -d /nix/store/*python* 2>/dev/null | head -n 10 || echo "/nix/store is empty or unreadable"
   exit 1
 fi
 
