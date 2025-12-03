@@ -1,133 +1,115 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
-from typing import Dict, Tuple, Optional
-from datetime import datetime
-import json
+from typing import Optional, Dict, Tuple
 import os
+import json
 import io
+import logging
 import pandas as pd
-from dotenv import load_dotenv
-from forensics import analyze_image
 
-# Load environment variables from .env file
+# Logic Imports
+from forensics import analyze_image
+from dotenv import load_dotenv
+
 load_dotenv()
 
 app = FastAPI()
 
+# 1. CORS Setup (Critical for frontend connection)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all for Vercel/Local
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+# 2. Supabase Setup
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+
+supabase = None
+if SUPABASE_URL and SUPABASE_KEY:
+    try:
+        from supabase import create_client, Client
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except ImportError:
+        logging.warning("Supabase library not installed")
+    except Exception as e:
+        logging.warning(f"Failed to initialize Supabase: {e}")
+
+# 3. Data Models
 class FeedbackSchema(BaseModel):
     filename: str
     ai_score: int
-    user_verdict: str  # "correct" or "incorrect"
+    user_verdict: str
     actual_category: Optional[str] = None
     comments: Optional[str] = None
     contribute_data: bool
     timestamp: str
 
 
-def classify_trust_score(score: int) -> Tuple[str, str, str]:
+def classify_trust_score(score: int) -> str:
     """
     Classify trust score into categories.
-    
-    Returns:
-        Tuple of (classification, group, status)
+    Returns the classification string.
     """
     if 0 <= score <= 20:
-        return ("ai_generated", "ai", "AI Generated")
+        return "ai_generated"
     elif 21 <= score <= 40:
-        return ("likely_artificial", "ai", "Likely AI")
+        return "likely_artificial"
     elif 41 <= score <= 49:
-        return ("mixed_signals", "ai", "Ambiguous Signal")
+        return "mixed_signals"
     elif 50 <= score <= 65:
-        return ("low_quality_compressed", "real", "Low Quality Source")
+        return "low_quality_compressed"
     elif 66 <= score <= 85:
-        return ("digital_processed", "real", "Retouched Photo")
+        return "digital_processed"
     elif 86 <= score <= 100:
-        return ("authentic_capture", "real", "Real Photo")
+        return "authentic_capture"
     else:
         # Fallback for edge cases
         if score < 0:
-            return ("ai_generated", "ai", "AI Generated")
+            return "ai_generated"
         else:
-            return ("authentic_capture", "real", "Real Photo")
+            return "authentic_capture"
 
-# CORS settings (adjust origins as necessary for production)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
+# 4. The Critical Analysis Endpoint (RESTORED)
 @app.post("/analyze")
-async def analyze(file: UploadFile = File(...)):
+async def upload_analyze(file: UploadFile = File(...)):
     try:
-        image_bytes = await file.read()
-        result = analyze_image(image_bytes)
-        if 'error' in result:
-            return JSONResponse(status_code=400, content=result)
+        # Read file into memory
+        contents = await file.read()
+        
+        # Pass to forensics engine
+        result = analyze_image(contents)
         
         # Get trust_score from analysis
-        trust_score = result.get('trust_score', 0)
+        trust_score = result.get("trust_score", 0)
         
         # Classify the score
-        classification, group, status = classify_trust_score(trust_score)
+        classification = classify_trust_score(trust_score)
         
-        # Build response with new structure
-        response: Dict = {
+        # Return JSON to frontend
+        return {
             "filename": file.filename or "image.jpg",
             "trust_score": trust_score,
             "classification": classification,
-            "group": group,
-            "gradient_image": result.get('gradient_image', '')
+            "gradient_image": result.get("gradient_image", ""),
+            "meta": result.get("meta", {})
         }
-        
-        return response
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        logging.error(f"Analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
+# 5. Feedback Endpoint
 @app.post("/feedback")
 async def submit_feedback(feedback: FeedbackSchema):
-    """
-    Submit user feedback about analysis results.
-    Tries Supabase first, falls back to local JSON file.
-    """
-    try:
-        # Try Supabase first (if credentials exist)
-        supabase_url = os.getenv("SUPABASE_URL")
-        supabase_key = os.getenv("SUPABASE_KEY")
-        
-        if supabase_url and supabase_key:
-            try:
-                # Import supabase client (install: pip install supabase)
-                from supabase import create_client, Client
-                supabase: Client = create_client(supabase_url, supabase_key)
-                
-                # Insert into Supabase
-                # Note: Supabase table doesn't have 'timestamp' column - it auto-generates timestamps
-                supabase.table("feedback").insert({
-                    "filename": feedback.filename,
-                    "ai_score": feedback.ai_score,
-                    "user_verdict": feedback.user_verdict,
-                    "actual_category": feedback.actual_category,
-                    "comments": feedback.comments,
-                    "contribute_data": feedback.contribute_data,
-                    # timestamp is not included - Supabase auto-generates it
-                }).execute()
-                
-                return {"status": "success", "mode": "database"}
-            except ImportError:
-                # Supabase library not installed, fall through to local
-                pass
-            except Exception as e:
-                # Supabase error, fall through to local
-                print(f"Supabase error: {e}, falling back to local storage")
-        
-        # Fallback: Save to local JSON file
+    if not supabase:
+        # Fallback to local JSON file
         feedback_data = {
             "filename": feedback.filename,
             "ai_score": feedback.ai_score,
@@ -138,7 +120,6 @@ async def submit_feedback(feedback: FeedbackSchema):
             "timestamp": feedback.timestamp,
         }
         
-        # Read existing feedback or create new list
         feedback_file = "feedback_local.json"
         if os.path.exists(feedback_file):
             with open(feedback_file, "r") as f:
@@ -146,55 +127,47 @@ async def submit_feedback(feedback: FeedbackSchema):
         else:
             feedbacks = []
         
-        # Append new feedback
         feedbacks.append(feedback_data)
         
-        # Write back to file
         with open(feedback_file, "w") as f:
             json.dump(feedbacks, f, indent=2)
         
         return {"status": "success", "mode": "local"}
-        
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
-
-
-def get_supabase_client():
-    """Get Supabase client if credentials are available."""
-    supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_KEY")
-    
-    if not supabase_url or not supabase_key:
-        return None
     
     try:
-        from supabase import create_client, Client
-        return create_client(supabase_url, supabase_key)
-    except ImportError:
-        return None
+        # Insert into Supabase (without timestamp - Supabase auto-generates it)
+        data = {
+            "filename": feedback.filename,
+            "ai_score": feedback.ai_score,
+            "user_verdict": feedback.user_verdict,
+            "actual_category": feedback.actual_category,
+            "comments": feedback.comments,
+            "contribute_data": feedback.contribute_data,
+        }
+        supabase.table("feedback").insert(data).execute()
+        return {"status": "success", "mode": "database"}
     except Exception as e:
-        print(f"Error creating Supabase client: {e}")
-        return None
+        logging.error(f"Feedback submission failed: {str(e)}")
+        return {"status": "error", "detail": str(e)}
 
+
+# 6. Admin View Endpoint
 @app.get("/admin/view")
-async def view_feedback():
-    """
-    View all collected feedback data.
-    Returns JSON list of all feedback entries from Supabase or local file.
-    """
-    # Try Supabase first
-    supabase = get_supabase_client()
+async def view_admin_data(key: str = ""):
+    # Basic protection
+    admin_pass = os.environ.get("ADMIN_PASSWORD", "admin123")
+    if key != admin_pass:
+        return {"error": "Unauthorized"}
+    
     if supabase:
         try:
-            response = supabase.table("feedback").select("*").execute()
-            feedbacks = response.data if response.data else []
-            return {"count": len(feedbacks), "data": feedbacks}
+            response = supabase.table("feedback").select("*").order("created_at", desc=True).execute()
+            return {"count": len(response.data) if response.data else 0, "data": response.data or []}
         except Exception as e:
-            print(f"Supabase error: {e}, falling back to local file")
+            logging.error(f"Supabase error: {e}, falling back to local file")
     
     # Fallback to local JSON file
     feedback_file = "feedback_local.json"
-    
     if not os.path.exists(feedback_file):
         return {"count": 0, "data": [], "message": "No data yet"}
     
@@ -202,7 +175,6 @@ async def view_feedback():
         with open(feedback_file, "r") as f:
             feedbacks = json.load(f)
         
-        # Return as list (if it's already a list) or wrap in list
         if isinstance(feedbacks, list):
             return {"count": len(feedbacks), "data": feedbacks}
         else:
@@ -213,30 +185,26 @@ async def view_feedback():
         return {"error": str(e)}
 
 
+# 7. Admin Download Endpoint
 @app.get("/admin/download")
-async def download_feedback(key: str = ""):
-    """
-    Download feedback data as CSV file.
-    Requires ?key=admin123 query parameter for security.
-    """
-    if key != "admin123":
+async def download_admin_data(key: str = ""):
+    # Basic protection
+    admin_pass = os.environ.get("ADMIN_PASSWORD", "admin123")
+    if key != admin_pass:
         return {"error": "Unauthorized. Use ?key=admin123"}
     
     feedbacks = []
     
-    # Try Supabase first
-    supabase = get_supabase_client()
     if supabase:
         try:
             response = supabase.table("feedback").select("*").execute()
             feedbacks = response.data if response.data else []
         except Exception as e:
-            print(f"Supabase error: {e}, falling back to local file")
+            logging.error(f"Supabase error: {e}, falling back to local file")
     
-    # Fallback to local JSON file if Supabase failed or not configured
+    # Fallback to local JSON file
     if not feedbacks:
         feedback_file = "feedback_local.json"
-        
         if not os.path.exists(feedback_file):
             return {"error": "No data to download"}
         
@@ -244,7 +212,6 @@ async def download_feedback(key: str = ""):
             with open(feedback_file, "r") as f:
                 feedbacks = json.load(f)
             
-            # Ensure it's a list
             if not isinstance(feedbacks, list):
                 feedbacks = [feedbacks]
         except Exception as e:
@@ -269,7 +236,11 @@ async def download_feedback(key: str = ""):
         response.headers["Content-Disposition"] = "attachment; filename=feedback_data.csv"
         
         return response
-        
     except Exception as e:
         return {"error": f"Failed to generate CSV: {str(e)}"}
 
+
+# Health check
+@app.get("/")
+def home():
+    return {"status": "Backend is running"}
