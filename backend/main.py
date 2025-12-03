@@ -16,9 +16,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configure FastAPI for Vercel deployment
-# When deployed on Vercel, routes are accessed via /api/* prefix
-# For local development, routes work without prefix
+# Configure FastAPI for Railway deployment
 # Using ORJSONResponse for faster JSON serialization (2-3x faster than standard json)
 app = FastAPI(
     title="RealorAI Backend",
@@ -28,9 +26,10 @@ app = FastAPI(
 )
 
 # 1. CORS Setup (Critical for frontend connection)
+# Allow all origins for Railway deployment (frontend and backend are separate services)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all for Vercel/Local
+    allow_origins=["*"],  # Allow all origins (frontend can be on different domain)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
