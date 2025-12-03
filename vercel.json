@@ -1,12 +1,17 @@
 {
     "rewrites": [
-      { "source": "/api/(.*)", "destination": "/backend/main.py" },
-      { "source": "/(.*)", "destination": "/index.html" }
+      { 
+        "source": "/api/(.*)", 
+        "destination": "/backend/main.py" 
+      },
+      { 
+        "source": "/((?!api/|assets/|favicon.ico|manifest.json).*)", 
+        "destination": "/index.html" 
+      }
     ],
     "functions": {
       "backend/main.py": {
-        "maxDuration": 60,
-        "includeFiles": "backend/**"
+        "maxDuration": 60
       }
     }
   }
