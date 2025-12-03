@@ -1,6 +1,7 @@
 // API Configuration
-// Set VITE_API_URL environment variable in production to your backend URL
-// If not set, uses /api for same-domain deployment or localhost for dev
+// In production, set VITE_API_URL in Vercel environment variables to your backend URL
+// Example: https://your-backend.railway.app or https://your-backend.onrender.com
+// If not set, defaults to /api (which won't work unless backend is deployed on Vercel)
 export const API_URL = import.meta.env.VITE_API_URL || 
   (import.meta.env.PROD ? '/api' : 'http://localhost:8001');
 
