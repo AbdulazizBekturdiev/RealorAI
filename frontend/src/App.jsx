@@ -27,7 +27,7 @@ export default function App() {
       </motion.div>
       <Box flex={1} display="flex" flexDirection="column">
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Home />} /> 
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/about" element={<About />} />
           <Route path="/admin" element={<Admin />} />

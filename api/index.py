@@ -6,5 +6,6 @@ from backend.main import app
 from mangum import Mangum
 
 # Wrap FastAPI app with Mangum to make it compatible with Vercel's serverless functions
+# When Vercel routes /api/analyze to this file, the path received is /analyze (prefix is stripped)
 handler = Mangum(app, lifespan="off")
 
