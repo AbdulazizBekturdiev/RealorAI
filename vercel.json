@@ -1,13 +1,8 @@
 {
     "rewrites": [
-      { 
-        "source": "/api/(?!admin/)(.*)", 
-        "destination": "/backend/main.py" 
-      },
-      { 
-        "source": "/((?!api/|assets/|favicon.ico|manifest.json).*)", 
-        "destination": "/index.html" 
-      }
+      { "source": "/api/:match*", "destination": "/backend/main.py" },
+      { "source": "/assets/:match*", "destination": "/assets/:match*" },
+      { "source": "/(.*)", "destination": "/index.html" }
     ],
     "functions": {
       "backend/main.py": {
