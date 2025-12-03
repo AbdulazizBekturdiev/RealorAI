@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import UploadZone from './UploadZone';
 import ScanningView from './ScanningView';
 import ResultsView from './ResultsView';
+import { API_URL } from '../config';
 
 const getImageOrientation = (file) => {
   return new Promise((resolve) => {
@@ -139,7 +140,7 @@ export default function Home() {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const resp = await fetch('http://localhost:8001/analyze', {
+      const resp = await fetch(`${API_URL}/analyze`, {
         method: 'POST',
         body: formData,
       });

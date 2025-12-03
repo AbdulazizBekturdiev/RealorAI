@@ -16,6 +16,7 @@ import {
   LinearProgress,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { API_URL } from '../config';
 
 const StyledTableContainer = styled(TableContainer)({
   backgroundColor: '#152218',
@@ -61,7 +62,7 @@ export default function Admin() {
   const fetchFeedback = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8001/admin/view');
+      const response = await fetch(`${API_URL}/admin/view`);
       const data = await response.json();
       
       if (data.data) {
@@ -79,7 +80,7 @@ export default function Admin() {
   };
 
   const handleDownload = () => {
-    window.open('http://localhost:8001/admin/download?key=admin123', '_blank');
+    window.open(`${API_URL}/admin/download?key=admin123`, '_blank');
   };
 
   return (

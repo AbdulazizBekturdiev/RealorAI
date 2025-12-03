@@ -22,6 +22,7 @@ import ThumbsUpActive from '../assets/thumb-up-selected.svg';
 import ThumbsDownDefault from '../assets/thumb-down.svg';
 import ThumbsDownActive from '../assets/thumb-down-selected.svg';
 import SuccessIcon from '../assets/feedback-success.svg';
+import { API_URL } from '../config';
 
 // Shared Brand Gradient
 const brandGradient = 'linear-gradient(to right, #E1FF01, #01F967)';
@@ -192,7 +193,7 @@ export default function FeedbackModal({ open, onClose, file, score, classificati
         timestamp: new Date().toISOString(),
       };
 
-      const response = await fetch('http://localhost:8001/feedback', {
+      const response = await fetch(`${API_URL}/feedback`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
