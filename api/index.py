@@ -3,7 +3,8 @@
 # Vercel will route /api/* requests to this file
 
 from backend.main import app
+from mangum import Mangum
 
-# Vercel expects the app instance to be available
-# The FastAPI app will be automatically detected and served
+# Wrap FastAPI app with Mangum to make it compatible with Vercel's serverless functions
+handler = Mangum(app, lifespan="off")
 
