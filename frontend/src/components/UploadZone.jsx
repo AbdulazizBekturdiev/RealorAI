@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Box, Button, Typography, useTheme, useMediaQuery } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { Image as ImageIcon } from 'lucide-react';
+import ImageDefaultIcon from '../assets/image_default.svg';
 
 const GradientButton = styled(Button)({
   background: 'linear-gradient(to right, #E1FF01, #01F967)',
@@ -104,11 +104,15 @@ export default function UploadZone({ onFileSelect }) {
         </svg>
 
         <input {...getInputProps()} />
-        <ImageIcon
-          size={64}
-          strokeWidth={1}
-          color="rgba(255, 255, 255, 0.3)"
-          style={{ marginBottom: '24px' }}
+        <Box
+          component="img"
+          src={ImageDefaultIcon}
+          alt="Upload Placeholder"
+          sx={{
+            height: '120px',
+            width: 'auto',
+            mb: { xs: 2, md: 3 },
+          }}
         />
         <GradientButton variant="contained" size="large">
           {isDragActive ? 'Drop files now' : 'Upload Image'}
