@@ -105,18 +105,10 @@ export default function About() {
               lineHeight: 1.8,
               mb: 4,
             }}
-          >
-            I'm a computer vision engineer and digital forensics researcher focused on detecting AI-generated imagery. 
-            This project uses signal analysis techniques—gradient covariance matrices, eigenvalue decomposition, and 
-            compression artifact detection—to distinguish authentic photographs from synthetic media.
-            <br /><br />
-            Unlike deep learning approaches that require massive datasets, our method analyzes the mathematical 
-            fingerprints left by camera sensors versus diffusion models. Every real photo contains microscopic 
-            noise patterns (Poisson-Gaussian grain) that AI generators struggle to replicate perfectly.
-            <br /><br />
-            The goal is transparency: helping users understand when they're viewing authentic content versus 
-            algorithmically generated imagery in an era where the line between real and synthetic is increasingly blurred.
-          </Typography>
+            dangerouslySetInnerHTML={{
+              __html: "I am Abdulaziz and I am a Senior Product Designer with over 11 years of experience transforming complex problems into elegant user experiences. I have spent over a decade driving product strategy across diverse sectors, scaling operational systems for major enterprises and defining the user experience landscape for developing regions. <br /><br /> My work has always been about one thing: Trust. Whether it's a user trusting a payment gateway or a driver trusting a navigation route, design is the bridge between human intent and digital execution. This tool is an extension of that philosophy, a way to verify the trustworthiness of the media we consume every day. <br /><br /> As Generative AI (GANs and Diffusion models) began to reshape our digital reality, I noticed a gap. We had tools to create infinitely, but few to verify accurately. Most detectors are "black boxes", neural networks guessing about other neural networks. <br /><br /> I wanted to build a solution grounded in First Principles. By stripping away the illusion to analyse raw signal data, this tool moves beyond guessing. It is an experiment in bringing digital forensics out of the lab, giving us a mathematical lens to distinguish the captured world from the synthesised one."
+            }}
+          />
 
           {/* CTA Buttons */}
           <Box
