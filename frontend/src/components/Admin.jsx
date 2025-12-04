@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Typography,
@@ -14,6 +14,8 @@ import {
   Alert,
   Button,
   LinearProgress,
+  TextField,
+  Stack,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { API_URL } from '../config';
@@ -50,38 +52,175 @@ const GradientButton = styled(Button)({
   },
 });
 
+const SolidGradientButton = styled(Button)({
+  background: 'linear-gradient(to right, #E1FF01, #01F967)',
+  color: '#101D13',
+  borderRadius: '12px',
+  padding: '10px 24px',
+  textTransform: 'none',
+  fontWeight: 700,
+  '&:hover': {
+    background: 'linear-gradient(to right, #E1FF01, #01F967)',
+    opacity: 0.9,
+    color: '#101D13',
+  },
+  '&:disabled': {
+    color: '#101D13',
+    opacity: 0.5,
+  },
+  '&:focus': {
+    color: '#101D13',
+  },
+  '&:active': {
+    color: '#101D13',
+  },
+});
+
 export default function Admin() {
   const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [inputKey, setInputKey] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  useEffect(() => {
-    fetchFeedback();
-  }, []);
+  const ADMIN_PASSWORD = 'MydatabaseID92';
 
-  const fetchFeedback = async () => {
+  const fetchFeedback = async (key) => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/admin/view`);
+      setError(null);
+      const response = await fetch(`${API_URL}/admin/view?key=${key}`);
+      
+      if (response.status === 401) {
+        setError('Unauthorized. Please check your admin password.');
+        setIsAuthenticated(false);
+        return;
+      }
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
       
       if (data.data) {
         setRows(data.data);
+      } else if (Array.isArray(data)) {
+        setRows(data);
       } else {
         setRows([]);
       }
+      setIsAuthenticated(true);
       setError(null);
     } catch (err) {
-      setError('Failed to load feedback data');
-      console.error(err);
+      setError('Failed to load feedback data. Please check your connection and password.');
+      console.error('Admin fetch error:', err);
+      setIsAuthenticated(false);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDownload = () => {
-    window.open(`${API_URL}/admin/download?key=admin123`, '_blank');
+  const handleAuthenticate = (e) => {
+    e.preventDefault();
+    if (inputKey.trim()) {
+      fetchFeedback(inputKey);
+    }
   };
+
+  const handleDownload = () => {
+    if (inputKey.trim()) {
+      window.open(`${API_URL}/admin/download?key=${inputKey}`, '_blank');
+    } else {
+      setError('Please enter admin password first');
+    }
+  };
+
+  // Show authentication form if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <Container 
+        maxWidth="sm" 
+        sx={{ 
+          py: 8, 
+          minHeight: '80vh', 
+          display: 'flex', 
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Box
+          component="form"
+          onSubmit={handleAuthenticate}
+          sx={{
+            width: '100%',
+            maxWidth: '500px',
+            backgroundColor: '#152218',
+            borderRadius: '32px',
+            padding: 4,
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+          }}
+        >
+          <Typography
+            variant="h5"
+            sx={{
+              color: 'white',
+              fontWeight: 700,
+              mb: 3,
+              textAlign: 'center',
+            }}
+          >
+            Admin Access
+          </Typography>
+          
+          <Stack spacing={3}>
+            <TextField
+              fullWidth
+              type="password"
+              label="Admin Password"
+              value={inputKey}
+              onChange={(e) => setInputKey(e.target.value)}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  color: 'white',
+                  '& fieldset': {
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#01F967',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  '&.Mui-focused': {
+                    color: '#01F967',
+                  },
+                },
+              }}
+              autoFocus
+            />
+            
+            {error && (
+              <Alert severity="error" sx={{ backgroundColor: 'rgba(250, 17, 0, 0.1)', color: '#FA9E00' }}>
+                {error}
+              </Alert>
+            )}
+            
+            <SolidGradientButton
+              type="submit"
+              fullWidth
+              disabled={loading || !inputKey.trim()}
+            >
+              {loading ? 'Authenticating...' : 'Access Admin Panel'}
+            </SolidGradientButton>
+          </Stack>
+        </Box>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="xl" sx={{ py: 8, minHeight: '80vh' }}>
@@ -96,7 +235,7 @@ export default function Admin() {
         >
           Feedback Data
         </Typography>
-        <GradientButton onClick={handleDownload}>
+        <GradientButton onClick={handleDownload} disabled={!inputKey.trim()}>
           Download CSV
         </GradientButton>
       </Box>
@@ -146,7 +285,7 @@ export default function Admin() {
                 <TableRow key={index}>
                   <TableCell>
                     <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
-                      {new Date(row.timestamp).toLocaleString()}
+                      {row.timestamp ? new Date(row.timestamp).toLocaleString() : (row.created_at ? new Date(row.created_at).toLocaleString() : '-')}
                     </Typography>
                   </TableCell>
                   <TableCell>

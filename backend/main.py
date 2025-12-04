@@ -176,9 +176,9 @@ async def submit_feedback(feedback: FeedbackSchema):
 @app.get("/admin/view")
 async def view_admin_data(key: str = ""):
     # Basic protection
-    admin_pass = os.environ.get("ADMIN_PASSWORD", "admin123")
+    admin_pass = os.environ.get("ADMIN_PASSWORD", "MydatabaseID92")
     if key != admin_pass:
-        return {"error": "Unauthorized"}
+        raise HTTPException(status_code=401, detail="Unauthorized")
     
     if supabase:
         try:
@@ -210,9 +210,9 @@ async def view_admin_data(key: str = ""):
 @app.get("/admin/download")
 async def download_admin_data(key: str = ""):
     # Basic protection
-    admin_pass = os.environ.get("ADMIN_PASSWORD", "admin123")
+    admin_pass = os.environ.get("ADMIN_PASSWORD", "MydatabaseID92")
     if key != admin_pass:
-        return {"error": "Unauthorized. Use ?key=admin123"}
+        raise HTTPException(status_code=401, detail="Unauthorized")
     
     feedbacks = []
     
