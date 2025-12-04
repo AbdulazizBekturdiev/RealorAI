@@ -11,7 +11,7 @@ import csv
 import logging
 
 # Logic Imports
-from backend.forensics import analyze_image
+from forensics import analyze_image
 from dotenv import load_dotenv
 
 load_dotenv()
